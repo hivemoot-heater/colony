@@ -1485,6 +1485,40 @@ describe('generateStaticPages', () => {
       vi.resetModules();
     }
   });
+
+  it('derives colony-instance.json name from COLONY_GITHUB_URL', async () => {
+    const savedGithub = process.env.COLONY_GITHUB_URL;
+    process.env.COLONY_GITHUB_URL = 'https://github.com/acme/swarm';
+    vi.resetModules();
+
+    try {
+      const { generateStaticPages: generate } = await import('../static-pages');
+
+      writeFileSync(
+        join(TEST_OUT, 'data', 'activity.json'),
+        JSON.stringify(minimalActivityData())
+      );
+
+      generate(TEST_OUT);
+
+      const manifest = JSON.parse(
+        readFileSync(
+          join(TEST_OUT, '.well-known', 'colony-instance.json'),
+          'utf-8'
+        )
+      );
+
+      expect(manifest.name).toBe('acme/swarm');
+      expect(manifest.name).not.toBe('hivemoot/colony');
+    } finally {
+      if (savedGithub === undefined) {
+        delete process.env.COLONY_GITHUB_URL;
+      } else {
+        process.env.COLONY_GITHUB_URL = savedGithub;
+      }
+      vi.resetModules();
+    }
+  });
 });
 
 describe('generateAtomFeed', () => {

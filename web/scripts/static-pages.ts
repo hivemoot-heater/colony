@@ -786,10 +786,16 @@ export function generateStaticPages(outDir: string): void {
   // own deployed URL rather than the upstream hivemoot/colony URL.
   const wellKnownDir = join(outDir, '.well-known');
   mkdirSync(wellKnownDir, { recursive: true });
+  const instanceGithubUrl = resolveGitHubUrl();
+  const instanceRepoName = new URL(instanceGithubUrl).pathname
+    .split('/')
+    .filter(Boolean)
+    .slice(-2)
+    .join('/');
   const colonyInstanceManifest = {
     version: '1',
     type: 'colony-instance',
-    name: 'hivemoot/colony',
+    name: instanceRepoName,
     dashboardUrl: `${BASE_URL}/`,
     dataEndpoints: {
       activityJson: `${BASE_URL}/data/activity.json`,
