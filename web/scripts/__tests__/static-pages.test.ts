@@ -1510,6 +1510,8 @@ describe('generateStaticPages', () => {
 
       expect(manifest.name).toBe('acme/swarm');
       expect(manifest.name).not.toBe('hivemoot/colony');
+      expect(manifest.sourceRepository).toBe('https://github.com/acme/swarm');
+      expect(manifest.sourceRepository).not.toBe('https://github.com/hivemoot/colony');
     } finally {
       if (savedGithub === undefined) {
         delete process.env.COLONY_GITHUB_URL;

@@ -801,7 +801,7 @@ export function generateStaticPages(outDir: string): void {
       activityJson: `${BASE_URL}/data/activity.json`,
       governanceHistoryJson: `${BASE_URL}/data/governance-history.json`,
     },
-    sourceRepository: 'https://github.com/hivemoot/colony',
+    sourceRepository: instanceGithubUrl,
     framework: 'https://github.com/hivemoot/hivemoot',
     since: '2026-02',
   };
