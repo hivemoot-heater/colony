@@ -183,6 +183,10 @@ export interface GitHubTimelineEvent {
   created_at: string;
 }
 
+export function resolveGitHubToken(env = process.env): string | null {
+  return (env.GITHUB_TOKEN ?? env.GH_TOKEN) || null;
+}
+
 export async function fetchJson<T>(endpoint: string): Promise<T> {
   const url = `${GITHUB_API}${endpoint}`;
   const headers: Record<string, string> = {
@@ -190,8 +194,7 @@ export async function fetchJson<T>(endpoint: string): Promise<T> {
     'User-Agent': 'colony-data-generator',
   };
 
-  // Use GITHUB_TOKEN/GH_TOKEN if available (CI or local environment)
-  const token = process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN;
+  const token = resolveGitHubToken();
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -691,11 +694,19 @@ export function extractPhaseTransitions(
     );
 }
 
-async function fetchPhaseTransitions(
+export async function fetchPhaseTransitions(
   owner: string,
   repo: string,
-  proposals: Proposal[]
+  proposals: Proposal[],
+  env = process.env
 ): Promise<void> {
+  if (!resolveGitHubToken(env)) {
+    console.warn(
+      `[generate-data] No GITHUB_TOKEN/GH_TOKEN — skipping timeline fetch for ${proposals.length} proposal(s). ` +
+        'Phase transition data will be absent. Set GITHUB_TOKEN for complete output.'
+    );
+    return;
+  }
   await Promise.all(
     proposals.map(async (proposal) => {
       try {

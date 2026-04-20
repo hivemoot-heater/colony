@@ -21,6 +21,8 @@ import {
   extractPhaseTransitions,
   filterAndMapProposals,
   enrichPullRequestsWithApprovalTimes,
+  resolveGitHubToken,
+  fetchPhaseTransitions,
   type GitHubCommit,
   type GitHubEvent,
   type GitHubTimelineEvent,
@@ -2527,5 +2529,53 @@ describe('extractPhaseTransitions with hivemoot:* labels', () => {
       { phase: 'voting', enteredAt: '2026-01-02T00:00:00Z' },
       { phase: 'implemented', enteredAt: '2026-01-03T00:00:00Z' },
     ]);
+  });
+});
+
+describe('resolveGitHubToken', () => {
+  it('returns GITHUB_TOKEN when set', () => {
+    expect(resolveGitHubToken({ GITHUB_TOKEN: 'ghp_token123' })).toBe(
+      'ghp_token123'
+    );
+  });
+
+  it('falls back to GH_TOKEN when GITHUB_TOKEN is absent', () => {
+    expect(resolveGitHubToken({ GH_TOKEN: 'gh_fallback' })).toBe('gh_fallback');
+  });
+
+  it('returns null when neither token is set', () => {
+    expect(resolveGitHubToken({})).toBeNull();
+  });
+
+  it('GITHUB_TOKEN takes precedence over GH_TOKEN', () => {
+    expect(
+      resolveGitHubToken({ GITHUB_TOKEN: 'primary', GH_TOKEN: 'secondary' })
+    ).toBe('primary');
+  });
+
+  it('returns null for empty string tokens', () => {
+    expect(resolveGitHubToken({ GITHUB_TOKEN: '' })).toBeNull();
+  });
+});
+
+describe('fetchPhaseTransitions (no-token path)', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('warns once and skips all fetches when no token is set', async () => {
+    const proposals = [
+      { number: 1, phaseTransitions: undefined },
+      { number: 2, phaseTransitions: undefined },
+    ];
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await fetchPhaseTransitions('owner', 'repo', proposals as never, {});
+
+    expect(warn).toHaveBeenCalledOnce();
+    expect(warn.mock.calls[0][0]).toContain('No GITHUB_TOKEN/GH_TOKEN');
+    expect(warn.mock.calls[0][0]).toContain('2 proposal(s)');
+    expect(proposals[0].phaseTransitions).toBeUndefined();
+    expect(proposals[1].phaseTransitions).toBeUndefined();
   });
 });
